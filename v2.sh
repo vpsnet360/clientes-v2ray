@@ -132,7 +132,7 @@ print_separator
 print_message "${CYAN}" "AGREGAR NUEVO USUARIO"
 print_separator
 while true; do
-echo -e "${YELLOW}INGRESE EL NOMBRE DEL NUEVO USUARIO:${NC}"
+echo -e ""\033[1;33mINGRESE EL NOMBRE DEL NUEVO USUARIO:\033[0m""
 echo -ne "\033[33m\u27A4 \033[0m"
 read userName
 userName=$(echo "$userName" | tr -d '[:space:]')
@@ -145,7 +145,7 @@ else
 break
 fi
 done
-echo -e "${YELLOW}INGRESE LA DURACIÓN EN DÍAS PARA EL NUEVO USUARIO:${NC}"
+echo -e ""\033[1;33mINGRESE LA DURACIÓN EN DÍAS PARA EL NUEVO USUARIO:\033[0m""
 echo -ne "\033[33m\u27A4 \033[0m"
 read days
 print_separator
@@ -155,7 +155,7 @@ read -p "PRESIONE ENTER PARA REGRESAR AL MENÚ PRINCIPAL" enterKey
 clear
 return 1
 fi
-echo -e "${YELLOW}¿DESEA INGRESAR UN UUID PERSONALIZADO? (SÍ: S, NO: CUALQUIER TECLA):${NC}"
+echo -e ""\033[1;33m¿DESEA INGRESAR UN UUID PERSONALIZADO? (SÍ: S, NO: CUALQUIER TECLA):\033[0m""
 echo -ne "\033[33m\u27A4 \033[0m"
 read customUuidChoice
 if [[ "${customUuidChoice,,}" == "s" ]]; then
