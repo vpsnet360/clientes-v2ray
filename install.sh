@@ -136,7 +136,7 @@ fi
 
 unalias v2 > /dev/null 2>&1
 
-wget --no-cache -O /usr/bin/v2.sh https://raw.githubusercontent.com/joaquin1444/clientes-v2ray/main/v2.sh > /dev/null 2>&1
+wget --no-cache -O /usr/bin/v2.sh https://raw.githubusercontent.com/seba360/clientes-v2ray/main/v2.sh > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     sudo chmod +x /usr/bin/v2.sh
     
