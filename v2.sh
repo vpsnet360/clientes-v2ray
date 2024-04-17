@@ -238,7 +238,6 @@ break
 fi
 done
 sleep 2
-sed -i "/$userId/d" /etc/v2ray/v2clientes.txt
 echo "$newDate" >> /etc/v2ray/v2clientes.txt
 systemctl restart v2ray
 print_message "${GREEN}" "UUID DEL USUARIO CON ID $userId EDITADO EXITOSAMENTE."
