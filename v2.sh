@@ -155,7 +155,7 @@ read -p "PRESIONE ENTER PARA REGRESAR AL MENÚ PRINCIPAL" enterKey
 clear
 return 1
 fi
-echo -e ""\033[1;33m¿DESEA INGRESAR UN UUID PERSONALIZADO? (SÍ: S, NO: CUALQUIER TECLA):\033[0m""
+echo -e "\033[1;33m¿DESEA INGRESAR UN UUID PERSONALIZADO? (SÍ: S, NO: CUALQUIER TECLA):\033[0m"
 echo -ne "\033[33m\u27A4 \033[0m"
 read customUuidChoice
 if [[ "${customUuidChoice,,}" == "s" ]]; then
