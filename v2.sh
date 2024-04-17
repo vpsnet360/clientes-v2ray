@@ -240,7 +240,7 @@ done
 sleep 2
 sed -i "/$userId/d" /etc/v2ray/v2clientes.txt
 echo "$newUuid | $newName | $newDate" >> /etc/v2ray/v2clientes.txt
-jq ".inbounds[0].settings.clients = (.inbounds[0].settings.clients | .email = \"$newName\" else . end))" "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+jq ".inbounds[0].settings.clients = (.inbounds[0].settings.clients | map(if .id == \"$userId\" | .email = \"$newName\" else . end))" "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
 systemctl restart v2ray
 print_message "${GREEN}" "UUID DEL USUARIO CON ID $userId EDITADO EXITOSAMENTE."
 read -p "PRESIONE ENTER PARA REGRESAR AL MENÚ PRINCIPAL" enterKey
