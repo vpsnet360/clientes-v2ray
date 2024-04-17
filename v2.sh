@@ -132,7 +132,7 @@ print_separator
 print_message "${CYAN}" "AGREGAR NUEVO USUARIO"
 print_separator
 while true; do
-echo -e ""\033[1;33mINGRESE EL NOMBRE DEL NUEVO USUARIO:\033[0m""
+echo -e "${YELLOW}INGRESE EL NOMBRE DEL NUEVO USUARIO:${NC}"
 echo -ne "\033[33m\u27A4 \033[0m"
 read userName
 userName=$(echo "$userName" | tr -d '[:space:]')
@@ -145,7 +145,7 @@ else
 break
 fi
 done
-echo -e ""\033[1;33mINGRESE LA DURACIÓN EN DÍAS PARA EL NUEVO USUARIO:\033[0m""
+echo -e "${YELLOW}INGRESE LA DURACIÓN EN DÍAS PARA EL NUEVO USUARIO:${NC}"
 echo -ne "\033[33m\u27A4 \033[0m"
 read days
 print_separator
@@ -155,7 +155,7 @@ read -p "PRESIONE ENTER PARA REGRESAR AL MENÚ PRINCIPAL" enterKey
 clear
 return 1
 fi
-echo -e "\033[1;33m¿DESEA INGRESAR UN UUID PERSONALIZADO? (SÍ: S, NO: CUALQUIER TECLA):\033[0m"
+echo -e "${YELLOW}¿DESEA INGRESAR UN UUID PERSONALIZADO? (SÍ: S, NO: CUALQUIER TECLA):${NC}"
 echo -ne "\033[33m\u27A4 \033[0m"
 read customUuidChoice
 if [[ "${customUuidChoice,,}" == "s" ]]; then
@@ -221,31 +221,6 @@ read -p "PRESIONE ENTER PARA REGRESAR AL MENÚ PRINCIPAL" enterKey
 return
 fi
 clear
-echo -e "INGRESE EL NUEVO UUID PARA EL USUARIO CON ID $userId (O PRESIONE ENTER PARA CONSERVAR EL UUID $userId): "
-echo -ne "\033[33m\u27A4 \033[0m"
-read newUuid
-if [ -z "$newUuid" ]; then
-newUuid=$userId
-elif [[ ! "$newUuid" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
-print_message "${RED}" "FORMATO DE UUID NO VÁLIDO. DEBE SER XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX."
-read -p "PRESIONE ENTER PARA REGRESAR AL MENÚ PRINCIPAL" enterKey
-return
-fi
-oldName=$(echo "$oldUserData" | awk -F "|" '{print $2}')
-while true; do
-echo -e "INGRESE EL NUEVO NOMBRE PARA EL USUARIO CON ID $userId (O PRESIONE ENTER PARA CONSERVAR EL NOMBRE $oldName): "
-echo -ne "\033[33m\u27A4 \033[0m"
-read newName
-newName=$(echo $newName | xargs)
-if [ -z "$newName" ]; then
-print_message "${RED}" "EL NOMBRE DEL USUARIO NO PUEDE ESTAR VACÍO. POR FAVOR, INGRESE UN NOMBRE."
-elif grep -q "| $newName |" /etc/v2ray/v2clientes.txt && [ "$newName" != "$oldName" ]; then
-print_message "${RED}" "YA EXISTE UN USUARIO CON EL MISMO NOMBRE. POR FAVOR, ELIJA OTRO NOMBRE."
-else
-break
-fi
-done
-while true; do
 echo -e "INGRESE EL NÚMERO DE DÍAS PARA LA FECHA DE EXPIRACIÓN (O PRESIONE ENTER PARA CONSERVAR LA FECHA DEL USUARIO ANTERIOR): "
 echo -ne "\033[33m\u27A4 \033[0m"
 read expiryDays
