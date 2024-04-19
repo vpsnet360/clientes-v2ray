@@ -23,11 +23,8 @@ echo -e "${CYAN}${BG_BLACK}╚════════════════�
 
 sleep 1
 install_ini() {
-    sudo apt-get install software-properties-common -y
-    sudo add-apt-repository universe
     sudo apt update -y
     sudo apt upgrade -y
-    sudo apt install shc -y
     pip install speedtest-cli
     echo "0 0 * * * /ruta/al/comando_a_ejecutar" | sudo crontab -
     clear
