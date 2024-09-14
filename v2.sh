@@ -1,20 +1,30 @@
 #!/bin/bash
+command -v bash >/dev/null 2>&1 || { echo >&2 ""; exit 1; }
 
+
+
+trap '"; exit 1' STOP
+
+if [ -t 1 ]; then
+    : 
+else
+    echo ""
+    exit 1
+fi
 
 sudo rm -f /root/install.sh
 
 CONFIG_FILE="/etc/v2ray/config.json"
 USERS_FILE="/etc/v2ray/v2clientes.txt"
 
-RED=$(tput setaf 1)
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
-CYAN=$(tput setaf 6)
-NC=$(tput sgr0)
+RESET="\e[0m"             
 RED='\033[0;31m'
+red="\033[1;31m" 
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
+LIGHT_BLUE='\033[1;34m'
+LIGHT_BLUE_CYAN="\033[1;36m"
 MAGENTA='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m'
@@ -25,40 +35,45 @@ print_message() {
 }
 check_v2ray_status() {
     if systemctl is-active --quiet v2ray; then
-        echo -e "${YELLOW}V2Ray está ${GREEN}activo${NC}"
+        echo -e "${YELLOW}V2Ray está ${LIGHT_BLUE_CYAN}activo${NC}"
     else
         echo -e "${YELLOW}V2Ray está ${RED}desactivado${NC}"
     fi
 }
-RED=$(tput setaf 1)
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
-CYAN=$(tput setaf 6)
-NC=$(tput sgr0)
-BG_BLACK=$(tput setab 0)
+
 show_menu() {
-    local VERSION="2.9"
+    local VERSION="3.9"
     local latest_version=$(check_github_version)
+    local user_counts=$(count_users)
+    local total_users=$(echo "$user_counts" | cut -d'|' -f1)
+    local expired_users=$(echo "$user_counts" | cut -d'|' -f2)
+
     clear
     echo -e "\e[36m╔════════════════════════════════════════════════════╗\e[0m"
     echo -e "\e[33m •••••••••• Menú V2Ray •••••••••• (versión) \e[35m$VERSION\e[33m \e[32m$latest_version\e[32m"
     
-    menu_info  
+    menu_info
+    
+    echo -e "${LIGHT_BLUE_CYAN}  Registrados: ${LIGHT_BLUE}[${LIGHT_BLUE_CYAN}${total_users}${LIGHT_BLUE}] ${LIGHT_BLUE_CYAN}Expirados: ${LIGHT_BLUE}[${red}${expired_users}${LIGHT_BLUE}]${NC}"
+
+
+
+
     echo -e "\e[36m╚════════════════════════════════════════════════════╝\e[0m"
-    echo -e "\e[36m\e[31m[1]\e[0m \e[32m➕ AGREGAR NUEVO USUARIO \e[0m"
-    echo -e "\e[36m\e[32m[2]\e[0m \e[31m🧹ELIMINAR USUARIO \e[0m"
-    echo -e "\e[36m\e[33m[3]\e[0m \e[33m🔄 EDITAR UUID DE USUARIO \e[0m"
-    echo -e "\e[36m\e[34m[4]\e[0m \e[33m👥 VER INFORMACIÓN DE USUARIOS \e[0m"
-    echo -e "\e[36m\e[35m[5]\e[0m \e[33m🔍 VER VMESS \e[0m"
-    echo -e "\e[36m\e[35m[6]\e[0m \e[33m🚮 ELIMINAR EXPIRADOS \e[0m"
-    echo -e "\e[36m\e[35m[7]\e[0m \e[33m🔄 RENOVAR USUARIO \e[0m"
-    echo -e "\e[36m\e[35m[8]\e[0m \e[33m🟢 VER CONECTADOS \e[0m"
-    echo -e "\e[36m\e[36m[9]\e[0m \e[33m📂 GESTIÓN DE COPIAS DE SEGURIDAD \e[0m"
-    echo -e "\e[36m\e[92m[10]\e[0m \e[33m🔧 CONFIGURAR V2RAY \e[0m"
-    echo -e "\e[36m\e[93m[0]\e[0m \e[33m🚪 SALIR \e[0m"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}01${NC}${RED}]${NC} ${LIGHT_BLUE}➕ AGREGAR NUEVO USUARIO ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}02${NC}${RED}]${NC} ${RED}🧹 ELIMINAR USUARIO ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}03${NC}${RED}]${NC} ${LIGHT_BLUE}🔄 EDITAR UUID DE USUARIO ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}04${NC}${RED}]${NC} ${LIGHT_BLUE}👥 VER INFORMACIÓN DE USUARIOS ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}05${NC}${RED}]${NC} ${LIGHT_BLUE}🔍 VER VMESS ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}06${NC}${RED}]${NC} ${RED}🚮 ELIMINAR EXPIRADOS ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}07${NC}${RED}]${NC} ${LIGHT_BLUE}🔄 RENOVAR USUARIO ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}08${NC}${RED}]${NC} ${LIGHT_BLUE}🟢 VER CONECTADOS ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}09${NC}${RED}]${NC} ${LIGHT_BLUE}📂 GESTIÓN DE COPIAS DE SEGURIDAD ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}10${NC}${RED}]${NC} ${LIGHT_BLUE}🔧 CONFIGURAR V2RAY ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}00${NC}${RED}]${NC} ${RED}🚪 SALIR ${NC}"
     echo -e "\e[36m╚════════════════════════════════════════════════════╝\e[0m"
-    echo -e "\e[34m⚙️ Acceder al menú con V2 \e[0m"
-               check_noti
+    print_message_with_border "Acceder al menú con  v2"
+    check_noti
 }
 
 check_github_version() {
@@ -119,16 +134,17 @@ menu_info() {
     _hoje=$(date +'%d/%m/%Y')
     echo -e "\033[1;37m SO \033[1;31m: \033[1;32m$_system \033[1;37mTIEMPO\033[1;31m: \033[1;32m$_hora"
     echo -e "\033[1;37m RAM\e[31m: \033[1;32m$_ram \033[1;37mUSADA\033[1;31m: \033[1;32m$mb\033[1;37m LIBRE\033[1;31m: \033[1;32m$_ram2"
-    echo -e "[${status_line}] \033[1;37mIP\033[1;31m:\033[1;32m $public_ip"
+    echo -e " \033[1;34m[\033[0m${status_line}\033[1;34m]\033[0m \033[1;37mIP\033[1;31m:\033[1;32m $public_ip"
 }
 
 show_backup_menu() {
     clear
+    print_message_with_border "MENU DE COPIA DE SEGURIDAD "
     print_separator
-    echo -e "${YELLOW}Opciones de v2ray backup:${NC}"
-    echo -e "1. ${GREEN}Crear copia de seguridad${NC}"
-    echo -e "2. ${RED}Restaurar copia de seguridad${NC}"
-    echo -e "3. Volver al menú principal"
+
+    echo -e "${RED}[${NC}${LIGHT_BLUE}01${NC}${RED}]${NC} ${LIGHT_BLUE_CYAN} Crear copia de seguridad ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}02${NC}${RED}]${NC} ${LIGHT_BLUE_CYAN} Restaurar copia de seguridad ${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}00${NC}${RED}]${NC} ${RED} Volver al menú principal ${NC}"
     print_separator
     read -p "Seleccione una opción: " backupOption
 
@@ -139,7 +155,7 @@ show_backup_menu() {
         2)
             restore_backup
             ;;
-        3)
+        0)
             main_menu  
             ;;
         *)
@@ -148,23 +164,113 @@ show_backup_menu() {
     esac
 }
 
+create_backup() {
+    clear
+    print_separator
+    read -p "INGRESE EL NOMBRE DEL ARCHIVO DE RESPALDO: " backupFileName
+    backupFilePath="/root/$backupFileName.rar"
+
+    
+    if ! command -v rar &> /dev/null; then
+        print_message_with_border "Instalando rar..."
+        apt-get update &> /dev/null
+        apt-get install -y rar &> /dev/null
+    fi
+
+    
+    rar a -r "$backupFilePath" /etc/v2ray/config.json /etc/v2ray/v2clientes.txt &> /dev/null
+
+    print_message_with_border "COPIA DE SEGURIDAD CREADA EN: $backupFilePath"
+    read -p "PRESIONE ENTER PARA CONTINUAR"
+}
+
+
+
+
+
+
+
+
+
+show_backups() {
+    clear
+    echo "==============================="
+    echo -e "\e[1m\e[34mBACKUPS DISPONIBLES:\e[0m"
+
+    
+    for backupFile in /root/*.rar /root/*_config.json; do
+        
+        backupName=$(basename "$backupFile" .rar)
+        backupName=$(basename "$backupName" _config.json)
+
+        
+        backupDateTime=$(date -r "$backupFile" "+%Y-%m-%d %H:%M:%S")
+
+        
+        echo -e "\e[1m\e[32mNombre:\e[0m $backupName"
+        echo -e "\e[1m\e[32mFecha y hora:\e[0m $backupDateTime"
+        echo "==============================="
+    done
+}
+
+restore_backup() {
+    local backup_files_rar="/root/*.rar"
+    local backup_files_json="/root/*_config.json"
+    local backup_count_rar=$(ls $backup_files_rar 2>/dev/null | wc -l)
+    local backup_count_json=$(ls $backup_files_json 2>/dev/null | wc -l)
+    
+    if [[ $backup_count_rar -gt 0 || $backup_count_json -gt 0 ]]; then
+        show_backups
+        read -p "Ingrese el nombre del archivo de respaldo a restaurar (sin la extensión): " backupFileName
+        
+        if [[ -f "/root/${backupFileName}.rar" ]]; then
+            rar x -o+ "/root/${backupFileName}.rar" / &> /dev/null
+            print_message_with_border "¡Copia de seguridad '$backupFileName' restaurada exitosamente!"
+            read -p "Presione Enter para regresar al menú principal" enterKey
+            systemctl restart v2ray
+            exec "$0"
+        elif [[ -f "/root/${backupFileName}_config.json" ]]; then
+            cp "/root/${backupFileName}_config.json" "/etc/v2ray/config.json"
+            cp "/root/${backupFileName}_v2clientes.txt" "/etc/v2ray/v2clientes.txt"
+            print_message_with_border "¡Copia de seguridad '$backupFileName' restaurada exitosamente!"
+            read -p "Presione Enter para regresar al menú principal" enterKey
+            systemctl restart v2ray
+            exec "$0"
+        else
+            print_message_with_border "El archivo de respaldo '$backupFileName' no existe."
+            read -p "Presione Enter para regresar al menú principal" enterKey
+        fi
+    else
+        print_message_with_border "No hay archivos de respaldo disponibles."
+        read -p "Presione Enter para regresar al menú principal" enterKey
+    fi
+}
+
+
 
 
 add_user() {
     clear
     print_separator
-    print_message "${CYAN}" "AGREGAR NUEVO USUARIO"
+    print_message_with_border "AGREGAR NUEVO USUARIO"
+
     print_separator
+
+    
+    if [ ! -f "$USERS_FILE" ]; then
+        touch "$USERS_FILE"
+    fi
 
     while true; do
         echo -e "${YELLOW}INGRESE EL NOMBRE DEL NUEVO USUARIO:${NC}"
         echo -ne "\033[33m\u27A4 \033[0m"
-        read userName
-        userName=$(echo "$userName" | tr -d '[:space:]')
+        read -r userName
+        userName=$(echo "$userName" | tr -d '[:space:]')  
+        userName=$(echo "$userName" | tr '[:upper:]' '[:lower:]')  
         print_separator
         if [ -z "$userName" ]; then
             print_message "${RED}" "EL NOMBRE DEL USUARIO NO PUEDE ESTAR VACÍO. POR FAVOR, INGRESE UN NOMBRE."
-        elif grep -q "| $userName |" "$USERS_FILE"; then
+        elif grep -q "| $userName |" "$USERS_FILE" || grep -q "\"email\": \"$userName\"" "$CONFIG_FILE"; then
             print_message "${RED}" "YA EXISTE UN USUARIO CON EL MISMO NOMBRE. POR FAVOR, ELIJA OTRO NOMBRE."
         else
             break
@@ -173,7 +279,7 @@ add_user() {
 
     echo -e "${YELLOW}INGRESE LA DURACIÓN EN DÍAS PARA EL NUEVO USUARIO:${NC}"
     echo -ne "\033[33m\u27A4 \033[0m"
-    read days
+    read -r days
     print_separator
 
     if ! [[ "$days" =~ ^[0-9]+$ ]]; then
@@ -183,15 +289,15 @@ add_user() {
         return 1
     fi
 
-    echo -e "${YELLOW}¿DESEA INGRESAR UN UUID PERSONALIZADO? (SÍ: S, NO: CUALQUIER TECLA):${NC}"
+    echo -e "${YELLOW}¿UUID PERSONALIZADO? (SÍ: S, NO: CUALQUIER TECLA)${NC}"
     echo -ne "\033[33m\u27A4 \033[0m"
-    read customUuidChoice
+    read -r customUuidChoice
 
     if [[ "${customUuidChoice,,}" == "s" ]]; then
         print_separator
         echo -e "${YELLOW}INGRESE EL UUID PERSONALIZADO PARA EL NUEVO USUARIO (FORMATO: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX):${NC}"
         echo -ne "\033[33m\u27A4 \033[0m"
-    read userId
+        read -r userId
 
         if ! [[ "$userId" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
             print_message "${RED}" "FORMATO DE UUID NO VÁLIDO. DEBE SER XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX."
@@ -210,15 +316,14 @@ add_user() {
     fi
 
     alterId=0
-    expiration_date=$(date -d "+$days days" +%Y-%m-%d)
+    expiration_date=$(date -d "+$days days" "+%Y-%m-%d %H:%M:%S")
     print_separator
-    print_message "${CYAN}" "UUID DEL NUEVO USUARIO: ${GREEN}$userId${NC}"
-    print_message "${YELLOW}" "FECHA DE EXPIRACIÓN: ${GREEN}$expiration_date${NC}"
+    print_message "${CYAN}" "UUID DEL NUEVO USUARIO: ${LIGHT_BLUE_CYAN}$userId${NC}"
+    print_message "${YELLOW}" "FECHA DE EXPIRACIÓN: ${LIGHT_BLUE_CYAN}$expiration_date${NC}"
 
     userJson="{\"alterId\": $alterId, \"id\": \"$userId\", \"email\": \"$userName\", \"expiration\": $(date -d "$expiration_date" +%s)}"
 
     jq ".inbounds[0].settings.clients += [$userJson]" "$CONFIG_FILE" > "$CONFIG_FILE.tmp" 2>/dev/null && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
-
 
     echo "$userId | $userName | $expiration_date" >> "$USERS_FILE"
 
@@ -226,99 +331,46 @@ add_user() {
     print_message "${GREEN}" "USUARIO AGREGADO EXITOSAMENTE."
     print_separator
     
-    print_message "${CYAN}" "VMESS DEL NUEVO USUARIO:"
-    ps="$userName"
-    id="$userId"
-    aid="$alterId"
     IP=$(hostname -I | awk '{print $1}')
     add=$(jq -r --arg IP "$IP" '.inbounds[0].domain // (if .inbounds[0].listen | type == "string" then .inbounds[0].listen | split(":")[0] else $IP end)' "$CONFIG_FILE")
-    port=$(jq '.inbounds[0].port' "$CONFIG_FILE")
     net=$(jq -r '.inbounds[0].streamSettings.network' "$CONFIG_FILE")
     path=$(jq -r '.inbounds[0].streamSettings.wsSettings.path // empty' "$CONFIG_FILE")
     host=$(jq -r '.inbounds[0].streamSettings.wsSettings.headers.Host // empty' "$CONFIG_FILE")
-
     tls="none"
-
-    var="{\"v\":\"2\",\"ps\":\"$ps\",\"add\":\"$add\",\"port\":$port,\"aid\":$aid,\"type\":\"none\",\"net\":\"$net\",\"path\":\"$path\",\"host\":\"$host\",\"id\":\"$id\",\"tls\":\"$tls\"}"
+    
+    
+    port=$(jq -r '.inbounds[0].port' "$CONFIG_FILE")
+    print_message "${CYAN}" "VMESS CON PUERTO $port:"
+    var="{\"v\":\"2\",\"ps\":\"$userName\",\"add\":\"$add\",\"port\":$port,\"aid\":$alterId,\"type\":\"none\",\"net\":\"$net\",\"path\":\"$path\",\"host\":\"$host\",\"id\":\"$userId\",\"tls\":\"$tls\"}"
     print_message "${GREEN}" "vmess://$(echo "$var" | jq -r '.|@base64')"
 
     print_separator
     read -p "PRESIONE ENTER PARA REGRESAR AL MENÚ PRINCIPAL" enterKey
     print_separator
 }
-renew() {
-    clear
-    print_message "${CYAN}" "RENOVAR USUARIOS"
+print_message_with_border() {
+    local message="$1"
+    local border_color='\e[1;31m' 
+    local text_color='\e[1;36m'   
+    local NC='\e[0m'              
 
-    config_path="/etc/v2ray/config.json"
-    usuarios_path="/etc/v2ray/v2clientes.txt"
+    
+    local length=$((${#message} + 4)) 
 
-    # Definir la función print_separator
-    print_separator() {
-        echo -e "\e[1;36m============================================================\e[0m"
-    }
+    
+    local border=$(printf '%.0s-' $(seq 1 $length))
 
-    # Obtener la fecha actual en formato de época
-    current_date=$(date +%s)
+    
+    local spaces=$(( (length - ${#message}) / 2 ))
+    local left_spaces=$(printf "%${spaces}s")
+    local right_spaces=$(printf "%$((length - ${#message} - spaces))s")
 
-    expired_users=()
-    user_count=0
-
-    while IFS=' | ' read -r uuid username expiration_date
-    do
-        expiration_epoch=$(date -d"$expiration_date" +%s)
-
-        if (( expiration_epoch < current_date )); then
-            expired_users+=("$uuid | $username | $expiration_date")
-            (( user_count++ ))
-        fi
-    done < "$usuarios_path"
-
-    if [ "$user_count" -eq 0 ]; then
-        print_message "${YELLOW}" "No hay usuarios expirados."
-        read -p $'\e[1;36mPresiona Enter para continuar...\e[0m'
-        return
-    fi
-
-    # Mostrar usuarios expirados
-    print_message "${YELLOW}" "Usuarios Expirados:"
-    print_separator
-    for ((i=0; i<user_count; i++)); do
-        print_message "${YELLOW}" "[$((i+1))] ${expired_users[$i]}"
-    done
-    print_separator
-
-    local user_selection
-    echo -e $'\e[1;36mSeleccione el número de usuario que desea renovar: \e[0m'
-    echo -ne "\033[33m\u27A4 \033[0m"
-    read user_selection
-    if [[ "$user_selection" == "" ]]; then
-        return
-    elif [[ ! "$user_selection" =~ ^[1-$user_count]$ ]]; then
-        print_message "${RED}" "Selección no válida."
-        read -p $'\e[1;36mPresiona Enter para continuar...\e[0m'
-        return
-    fi
-
-    local selected_user="${expired_users[$((user_selection-1))]}"
-    local user_name=$(echo "$selected_user" | awk -F '|' '{print $2}' | tr -d '[:space:]')
-    local old_exp_date=$(echo "$selected_user" | awk -F '|' '{print $3}')
-
-    # Pedir la nueva duración en días
-    local new_duration
-    echo -e $'\e[1;36mIngrese la nueva duración en días para el usuario '\"$user_name\"$': \e[0m'
- echo -ne "\033[33m\u27A4 \033[0m"
-    read new_duration
-    # Calcular la nueva fecha de expiración
-    local new_exp_date=$(date -d "+$new_duration days" +%Y-%m-%d)
-
-    # Actualizar la fecha de expiración en el archivo v2clientes.txt
-    sed -i "s|$user_name |$user_name |" "$usuarios_path"
-    sed -i "/$user_name/ s/$old_exp_date/$new_exp_date/" "$usuarios_path"
-
-    print_message "${GREEN}" "¡Usuario \"$user_name\" renovado exitosamente hasta $new_exp_date!"
-    read -p $'\e[1;36mPresiona Enter para continuar...\e[0m'
+    
+    echo -e "${border_color}┌${border}┐${NC}"
+    echo -e "${border_color}│${NC}${left_spaces}${text_color}${message}${right_spaces}${border_color}│${NC}"
+    echo -e "${border_color}└${border}┘${NC}"
 }
+
 
 
 
@@ -443,93 +495,136 @@ delete_user_by_uuid() {
 }
 
 
-create_backup() {
-    clear
-    print_separator
-    read -p "INGRESE EL NOMBRE DEL ARCHIVO DE RESPALDO: " backupFileName
-    backupFilePath="/root/$backupFileName"  
-    cp $CONFIG_FILE "$backupFilePath"_config.json
-    cp $USERS_FILE "$backupFilePath"_v2clientes.txt
-    print_message "${GREEN}" "COPIA DE SEGURIDAD CREADA EN: $backupFilePath"
-    print_separator
-    read -p "PRESIONE ENTER PARA CONTINUAR"
-}
-show_backups() {
-    print_separator
-    clear
-    echo -e "\e[1m\e[34mBACKUPS DISPONIBLES:\e[0m"
-    
-    for backupFile in /root/*_config.json; do
-        
-        backupName=$(basename "$backupFile" _config.json)
-        
-        
-        backupDateTime=$(date -r "$backupFile" "+%Y-%m-%d %H:%M:%S")
-        
-        
-        echo -e "\e[1m\e[32mNombre:\e[0m $backupName"
-        echo -e "\e[1m\e[32mFecha y hora:\e[0m $backupDateTime"
-        print_separator
-    done
-}
+
 show_registered_user() {
-    echo "$(clear)"
-    echo -e "\e[34mInformación de Usuarios:"
-    echo -e "=========================================================="
-    echo -e "UUID                                 Nombre      Días"
-    echo -e "=========================================================="
+    
+    clear
+
+    print_message_with_border "Información de Usuarios:" '\e[1;36m' 
+    echo -e "\e[1;36m==========================================================\e[0m" 
+    echo -e "\e[1;36m  UUID                              Nombre     Expiración\e[0m" 
+    echo -e "\e[1;36m==========================================================\e[0m" 
 
     current_time=$(date +%s)
 
     contador_activos=0
     contador_expirados=0
+    contador=0
 
     while IFS='|' read -r uuid nombre fecha_expiracion || [[ -n "$uuid" ]]; do
-        expiracion_timestamp=$(date -d "$fecha_expiracion" +%s)
-        dias_restantes=$(( (expiracion_timestamp - current_time + 86399) / 86400 ))
+        contador=$((contador+1))  # Incrementar el contador
+        if [ -z "$fecha_expiracion" ]; then
+            dias_horario="[--]"
+        else
+            expiracion_timestamp=$(date -d "$fecha_expiracion" +%s)
+            diferencia=$((expiracion_timestamp - current_time))
 
-        if [ "$current_time" -ge "$expiracion_timestamp" ]; then
-            color="\e[31m"  
+            if ((diferencia >= 0)); then
+                dias_restantes=$((diferencia / 86400))
+                if ((dias_restantes >= 1)); then
+                    dias_horario="[+${dias_restantes}d]"
+                else
+                    horas_restantes=$((diferencia / 3600))
+                    if ((horas_restantes >= 24)); then
+                        dias_horario="[+1d]"
+                    else
+                        dias_horario="[+${horas_restantes}h]"
+                    fi
+                fi
+            else
+                dias_restantes=$((diferencia / 86400))
+                if ((dias_restantes < -1)); then
+                    dias_horario="[${dias_restantes}d]"
+                else
+                    horas_restantes=$((diferencia / 3600))
+                    dias_horario="[${horas_restantes}h]"
+                fi
+            fi
+        fi
+
+        if [ -z "$fecha_expiracion" ] || [ "$current_time" -ge "$expiracion_timestamp" ]; then
+            if [ -z "$fecha_expiracion" ]; then
+                color="\e[1;32m"
+            else
+                color="\e[1;31m"
+            fi
             ((contador_expirados++))
         else
-            color="\e[32m"  
+            color="\e[1;32m"
             ((contador_activos++))
         fi
 
-        printf "%b%-37s %-10s [%s]\n\e[0m" "$color" "$uuid" "$nombre" "$dias_restantes"
+        printf "%b[%s]%b%-30s %-8s %s\n\e[0m" "\e[1;36m" "$contador" "$color" "$uuid" "$nombre" "$dias_horario"
     done < /etc/v2ray/v2clientes.txt
 
-    echo -e "\e[34m=========================================================="
-    echo -e "Usuarios activos: [\e[32m${contador_activos}\e[34m]"
-    echo -e "Usuarios expirados: [\e[31m${contador_expirados}\e[34m]"
+    echo -e "\e[1;36m==========================================================\e[0m" 
+    echo -e "Usuarios activos: [\e[1;32m${contador_activos}\e[0m]" 
+    echo -e "Usuarios expirados: [\e[1;31m${contador_expirados}\e[0m]" 
+    
 }
+
+
+
+
+
+
+CONFIG_FILE="/etc/v2ray/config.json"
+USERS_FILE="/etc/v2ray/v2clientes.txt"
+
+print_message() {
+    echo -e "$1$2${NC}"
+}
+
+
+
 
 
 
 delete_user() {
     clear
-    print_message "${CYAN}" "⚠️ ADVERTENCIA: LOS USUARIOS EXPIRADOS SE RECOMIENDA ELIMINARLOS MANUALMENTE CON EL ID ⚠️ "
+    echo -e "${CYAN}⚠️ ADVERTENCIA: LOS USUARIOS EXPIRADOS SE RECOMIENDA ELIMINARLOS MANUALMENTE CON EL ID ⚠️${NC}"
     show_registered_user
-
+    local users_list=($(grep -oP '[0-9a-f-]{36}' "$USERS_FILE"))  # Lista de UUIDs en el archivo USERS_FILE
     while true; do
-        print_message "${CYAN}" "INGRESE EL ID DEL USUARIO QUE DESEA ELIMINAR (O PRESIONE ENTER PARA CANCELAR) "
-        echo -ne "\033[33m\u27A4 \033[0m"
-        read userId
-
-        if [ -z "$userId" ]; then
-            print_message "${YELLOW}" "NO SE SELECCIONÓ NINGÚN ID. VOLVIENDO AL MENÚ PRINCIPAL."
+        echo -e "${CYAN}INGRESE EL UUID O NÚMERO DEL USUARIO QUE DESEA ELIMINAR (O PRESIONE ENTER PARA CANCELAR):${NC}"
+        echo -ne "${YELLOW}\u27A4 ${NC}"
+        read input
+        if [ -z "$input" ]; then
+            echo -e "${YELLOW}NO SE SELECCIONÓ EL UUID O NÚMERO. VOLVIENDO AL MENÚ PRINCIPAL.${NC}"
             sleep 0.5
             return
         fi
 
-        if ! grep -q "$userId" "$USERS_FILE"; then
-            print_message "${RED}" "USUARIO CON ID $userId NO SE ENCONTRÓ. INTENTE DE NUEVO."
+        # Verificar si el input es un número de índice
+        if [[ "$input" =~ ^[0-9]+$ ]] && [ "$input" -le "${#users_list[@]}" ] && [ "$input" -gt 0 ]; then
+            userId="${users_list[$((input-1))]}"
+        elif [[ "$input" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+            userId="$input"
+        else
+            echo -e "${RED}USUARIO CON NÚMERO O UUID $input NO ENCONTRADO. INTENTE DE NUEVO.${NC}"
             continue
         fi
 
-        jq ".inbounds[0].settings.clients = (.inbounds[0].settings.clients | map(select(.id != \"$userId\")))" "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
-        sed -i "/$userId/d" "$USERS_FILE"
-        print_message "${RED}" "USUARIO CON ID $userId ELIMINADO."
+        # Verificar si el usuario existe en el archivo de configuración
+        local found_in_json=$(jq -r ".inbounds[0].settings.clients[] | select(.id == \"$userId\")" "$CONFIG_FILE")
+        local found_in_users=$(grep -q "$userId" "$USERS_FILE"; echo $?)
+
+        if [[ -z "$found_in_json" ]] && [[ "$found_in_users" -ne 0 ]]; then
+            echo -e "${RED}USUARIO CON UUID $userId NO SE ENCONTRÓ EN LOS ARCHIVOS CONFIGURADOS. INTENTE DE NUEVO.${NC}"
+            continue
+        fi
+
+        # Eliminar del archivo de configuración
+        if [[ -n "$found_in_json" ]]; then
+            jq ".inbounds[0].settings.clients = (.inbounds[0].settings.clients | map(select(.id != \"$userId\")))" "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+        fi
+
+        # Eliminar del archivo de usuarios
+        if [[ "$found_in_users" -eq 0 ]]; then
+            sed -i "/$userId/d" "$USERS_FILE"
+        fi
+
+        echo -e "${GREEN}USUARIO CON UUID $userId ELIMINADO.${NC}"
         systemctl restart v2ray
         read -p "PRESIONE ENTER PARA REGRESAR AL MENÚ PRINCIPAL" enterKey
         return
@@ -540,38 +635,70 @@ delete_user() {
 
 
 
-
-
 show_registered_users() {
-    echo "$(clear)"
-    echo -e "\e[34mInformación de Usuarios:"
-    echo -e "=========================================================="
-    echo -e "UUID                                 Nombre      Días"
-    echo -e "=========================================================="
+    
+    clear
+
+    print_message_with_border "Información de Usuarios:" '\e[1;36m' 
+    echo -e "\e[1;36m==========================================================\e[0m" 
+    echo -e "\e[1;36m#   UUID                               Nombre     Expiración\e[0m" 
+    echo -e "\e[1;36m==========================================================\e[0m" 
 
     current_time=$(date +%s)
 
     contador_activos=0
     contador_expirados=0
+    contador=0
 
     while IFS='|' read -r uuid nombre fecha_expiracion || [[ -n "$uuid" ]]; do
-        expiracion_timestamp=$(date -d "$fecha_expiracion" +%s)
-        dias_restantes=$(( (expiracion_timestamp - current_time + 86399) / 86400 ))
+        contador=$((contador+1))  # Incrementar el contador
+        if [ -z "$fecha_expiracion" ]; then
+            dias_horario="[--]"
+        else
+            expiracion_timestamp=$(date -d "$fecha_expiracion" +%s)
+            diferencia=$((expiracion_timestamp - current_time))
 
-        if [ "$current_time" -ge "$expiracion_timestamp" ]; then
-            color="\e[31m"  
+            if ((diferencia >= 0)); then
+                dias_restantes=$((diferencia / 86400))
+                if ((dias_restantes >= 1)); then
+                    dias_horario="[+${dias_restantes}d]"
+                else
+                    horas_restantes=$((diferencia / 3600))
+                    if ((horas_restantes >= 24)); then
+                        dias_horario="[+1d]"
+                    else
+                        dias_horario="[+${horas_restantes}h]"
+                    fi
+                fi
+            else
+                dias_restantes=$((diferencia / 86400))
+                if ((dias_restantes < -1)); then
+                    dias_horario="[${dias_restantes}d]"
+                else
+                    horas_restantes=$((diferencia / 3600))
+                    dias_horario="[${horas_restantes}h]"
+                fi
+            fi
+        fi
+
+        if [ -z "$fecha_expiracion" ] || [ "$current_time" -ge "$expiracion_timestamp" ]; then
+            if [ -z "$fecha_expiracion" ]; then
+                color="\e[1;32m"
+            else
+                color="\e[1;31m"
+            fi
             ((contador_expirados++))
         else
-            color="\e[32m"  
+            color="\e[1;32m"
             ((contador_activos++))
         fi
 
-        printf "%b%-37s %-10s [%s]\n\e[0m" "$color" "$uuid" "$nombre" "$dias_restantes"
+        printf "%b[%s]%b%-30s %-8s %s\n\e[0m" "\e[1;36m" "$contador" "$color" "$uuid" "$nombre" "$dias_horario"
     done < /etc/v2ray/v2clientes.txt
 
-    echo -e "\e[34m=========================================================="
-    echo -e "Usuarios activos: [\e[32m${contador_activos}\e[34m]"
-    echo -e "Usuarios expirados: [\e[31m${contador_expirados}\e[34m]"
+    echo -e "\e[1;36m==========================================================\e[0m" 
+    echo -e "Usuarios activos: [\e[1;32m${contador_activos}\e[0m]" 
+    echo -e "Usuarios expirados: [\e[1;31m${contador_expirados}\e[0m]" 
     read -p "Presione Enter para regresar al menú principal" enterKey
 }
 
@@ -583,68 +710,209 @@ show_registered_users() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+count_users() {
+    local total_users=0
+    local expired_users=0
+    local current_time=$(date +%s)
+    local uuid
+    local nombre
+    local fecha_expiracion
+    local expiracion_timestamp
+
+    while IFS='|' read -r uuid nombre fecha_expiracion || [[ -n "$uuid" ]]; do
+        ((total_users++))
+        expiracion_timestamp=$(date -d "$fecha_expiracion" +%s)
+        if [ "$current_time" -ge "$expiracion_timestamp" ]; then
+            ((expired_users++))
+        fi
+    done < /etc/v2ray/v2clientes.txt
+
+    echo "$total_users|$expired_users"
+}
+
+
+# Función para renovar usuarios
+renew() {
+    clear
+    print_message_with_border "RENOVAR USUARIOS"
+
+    config_path="/etc/v2ray/config.json"
+    usuarios_path="/etc/v2ray/v2clientes.txt"
+
+    current_date=$(date +%s)
+
+    expired_users=()
+    user_count=0
+
+    while IFS=' | ' read -r uuid username expiration_date horario
+    do
+        expiration_epoch=$(date -d"$expiration_date" +%s)
+
+        if (( expiration_epoch < current_date )); then
+            expired_users+=("$username | $expiration_date")
+            (( user_count++ ))
+        fi
+    done < "$usuarios_path"
+
+    if [ "$user_count" -eq 0 ]; then
+        print_message "${YELLOW}" "No hay usuarios expirados."
+        read -p $'\e[1;36mPresiona Enter para continuar...\e[0m'
+        return
+    fi
+
+    print_message "${YELLOW}" "Usuarios Expirados:"
+    print_separator
+    for ((i=0; i<user_count; i++)); do
+        printf "${YELLOW}[$((i+1))] ${expired_users[$i]}\n"
+    done
+    print_separator
+
+    local user_selection
+    echo -e $'\e[1;36mSeleccione el número de usuario que desea renovar: \e[0m'
+    echo -ne "\033[33m\u27A4 \033[0m"
+    read user_selection
+
+    if [[ -z "$user_selection" ]]; then
+        return
+    elif ! [[ "$user_selection" =~ ^[0-9]+$ ]] || (( user_selection < 1 || user_selection > user_count )); then
+        print_message "${RED}" "Selección no válida."
+        read -p $'\e[1;36mPresiona Enter para continuar...\e[0m'
+        return
+    fi
+
+    local selected_user="${expired_users[$((user_selection-1))]}"
+    local username=$(echo "$selected_user" | awk -F '|' '{print $1}' | tr -d '[:space:]')
+    local old_exp_date=$(echo "$selected_user" | awk -F '|' '{print $2}' | tr -d '[:space:]')
+
+    local new_duration
+    echo -e $'\e[1;36mIngrese la nueva duración en días para el usuario '\"$username\"$': \e[0m'
+    echo -ne "\033[33m\u27A4 \033[0m"
+    read new_duration
+    
+    local new_exp_date=$(date -d "+$new_duration days" +%Y-%m-%d)
+
+    sed -i "s/$username | $old_exp_date/$username | $new_exp_date/" "$usuarios_path"
+
+    print_message "${GREEN}" "¡Usuario \"$username\" renovado exitosamente hasta $new_exp_date!"
+    read -p $'\e[1;36mPresiona Enter para continuar...\e[0m'
+}
+
+car_a() {
+    if [ ! -f "$USERS_FILE" ]; then
+        touch "$USERS_FILE"
+    fi
+}
+
+car_a
 
 
 show_vmess_by_id() {
     clear
     print_separator
-    print_message "${CYAN}" "Mostrar VMess por ID"
-
-    # Mostrar la lista de usuarios VMess registrados
-    show_registered_user
-
-    echo -e "${YELLOW}Ingrese el ID del usuario VMess que desea ver:${NC}" 
-    echo -ne "\033[33m\u27A4 \033[0m"
-    read vmess_id
-
+    print_message_with_border  "Mostrar VMess :)"
     
-    vmess_index=$(jq -r '.inbounds[0].settings.clients | map(.id == "'"$vmess_id"'") | index(true)' "$CONFIG_FILE")
+    declare -a id_array=()
+    while IFS='|' read -r uuid nombre fecha_expiracion || [[ -n "$uuid" ]]; do
+        id_array+=("$uuid|$nombre|$fecha_expiracion")
+        echo -e "${YELLOW}[${#id_array[@]}] \e[38;5;110m➤ $nombre ${NC}"
+    done < /etc/v2ray/v2clientes.txt
 
-    if [[ "$vmess_index" = "null" ]]; then
-        print_message "${RED}" "No se encontró ningún usuario VMess con el ID especificado."
+    echo -e "${YELLOW}Ingrese el número del usuario VMess que desea ver:${NC}" 
+    echo -ne "\033[33m\u27A4 \033[0m"
+    read -r user_number
+
+    if ! [[ $user_number =~ ^[0-9]+$ ]] || [[ $user_number -le 0 || $user_number -gt ${#id_array[@]} ]]; then
+        print_message "${RED}" "Número de usuario inválido."
         read -p "Presione Enter para regresar al menú principal" enterKey
         return
     fi
 
-    ps=$(jq -r .inbounds[0].settings.clients[$vmess_index].email "$CONFIG_FILE")
-    id=$(jq -r .inbounds[0].settings.clients[$vmess_index].id "$CONFIG_FILE")
-    aid=$(jq .inbounds[0].settings.clients[$vmess_index].alterId "$CONFIG_FILE")
-    add=$(jq -r '.inbounds[0].domain // (.inbounds[0].listen | split(":")[0])' "$CONFIG_FILE") && [[ $add = null ]] && add=$(wget -qO- ipv4.icanhazip.com)
-    port=$(jq '.inbounds[0].port' "$CONFIG_FILE")
-    tls=$(jq -r '.inbounds[0].streamSettings.security // "none"' "$CONFIG_FILE")
-    host=$(jq -r '.inbounds[0].streamSettings.wsSettings.headers.Host // empty' "$CONFIG_FILE")
-    path=$(jq -r '.inbounds[0].streamSettings.wsSettings.path // empty' "$CONFIG_FILE")
+    selected_user=$(echo "${id_array[$user_number-1]}" | cut -d '|' -f 2)
+    vmess_id=$(echo "${id_array[$user_number-1]}" | cut -d '|' -f 1 | tr -d '[:space:]') # Remove any spaces
+    expiration_date=$(echo "${id_array[$user_number-1]}" | cut -d '|' -f 3)
+
+    current_date=$(date +%F)
+    days_difference=$(( ($(date -d "$expiration_date" +%s) - $(date -d "$current_date" +%s)) / (60*60*24) ))
+
+    echo -e "${CYAN}NOMBRE DE USUARIO: \e[38;5;110m$selected_user\e[0m"
+
+    if [[ $days_difference -gt 0 ]]; then
+        echo -e "${CYAN}FECHA DE EXPIRACIÓN: \e[38;5;110m$expiration_date (quedan $days_difference días)\e[0m"
+    elif [[ $days_difference -eq 0 ]]; then
+        echo -e "${CYAN}FECHA DE EXPIRACIÓN: \e[38;5;110m$expiration_date (expira hoy)\e[0m"
+    else
+        days_difference=$(( -$days_difference ))
+        echo -e "${CYAN}FECHA DE EXPIRACIÓN: \e[38;5;110m$expiration_date (expiró hace $days_difference días)\e[0m"
+    fi
+
+    ps="$selected_user"
+    id="$vmess_id"
+    aid=0
+    IP=$(hostname -I | awk '{print $1}')
+    add=$(jq -r --arg IP "$IP" '.inbounds[0].domain // (if .inbounds[0].listen | type == "string" then .inbounds[0].listen | split(":")[0] else $IP end)' "$CONFIG_FILE")
+    port=$(jq -r '.inbounds[0].port' "$CONFIG_FILE")
     net=$(jq -r '.inbounds[0].streamSettings.network' "$CONFIG_FILE")
+    path=$(jq -r '.inbounds[0].streamSettings.wsSettings.path // empty' "$CONFIG_FILE")
+    host=$(jq -r '.inbounds[0].streamSettings.wsSettings.headers.Host // empty' "$CONFIG_FILE")
+    tls="none"
 
     var="{\"v\":\"2\",\"ps\":\"$ps\",\"add\":\"$add\",\"port\":$port,\"aid\":$aid,\"type\":\"none\",\"net\":\"$net\",\"path\":\"$path\",\"host\":\"$host\",\"id\":\"$id\",\"tls\":\"$tls\"}"
-    print_message "${GREEN}" "vmess://$(echo "$var" | jq -r '.|@base64')"
+    vmess_url="vmess://$(echo "$var" | jq -r '.|@base64')"
 
+    print_message "${GREEN}" "$vmess_url"
     read -p "Presione Enter para regresar al menú principal" enterKey
 }
+
+
+
+
 mostrar_menu() {
-    clear
-    echo -e "\033[34m[1]\033[0m \033[1;34mArgentina\033[0m"
-    echo -e "\033[34m[2]\033[0m \033[1;34mBrasil\033[0m"
-    echo -e "\033[34m[3]\033[0m \033[1;34mChile\033[0m"
-    echo -e "\033[34m[4]\033[0m \033[1;34mPerú\033[0m"
-    echo -e "\033[34m[5]\033[0m \033[1;34mMéxico\033[0m"
-    echo -e "\033[34m[0]\033[0m \033[1;34mSalir\033[0m"
+    while true; do
+        clear
+        print_message_with_border "SELECCIONAR ZONA HORARIA"
 
-    read -p "Ingrese el número de la opción deseada y luego presione Enter: " opcion
+        echo -e "${RED}[${NC}${LIGHT_BLUE}01${NC}${RED}]${NC} ${LIGHT_BLUE}Argentina${NC}"
+        echo -e "${RED}[${NC}${LIGHT_BLUE}02${NC}${RED}]${NC} ${LIGHT_BLUE}Brasil${NC}"
+        echo -e "${RED}[${NC}${LIGHT_BLUE}03${NC}${RED}]${NC} ${LIGHT_BLUE}Chile${NC}"
+        echo -e "${RED}[${NC}${LIGHT_BLUE}04${NC}${RED}]${NC} ${LIGHT_BLUE}Perú${NC}"
+        echo -e "${RED}[${NC}${LIGHT_BLUE}05${NC}${RED}]${NC} ${LIGHT_BLUE}México${NC}"
+        echo -e "${RED}[${NC}${LIGHT_BLUE}00${NC}${RED}]${NC} ${LIGHT_BLUE}Volver${NC}"
 
-    case $opcion in
-        1) sudo timedatectl set-timezone "America/Argentina/Buenos_Aires" ;;
-        2) sudo timedatectl set-timezone "America/Sao_Paulo" ;;
-        3) sudo timedatectl set-timezone "America/Santiago" ;;
-        4) sudo timedatectl set-timezone "America/Lima" ;;
-        5) sudo timedatectl set-timezone "America/Mexico_City" ;;
-        0) exit ;;
-        *) echo "Opción no válida";;
-    esac
+        read -p "Ingrese el número de la opción deseada y luego presione Enter: " opcion
 
-    echo -e "\033[1;32mZona horaria cambiada exitosamente.\033[0m"
-    read -p "Presione Enter para salir..." -s
+        case $opcion in
+            1) sudo timedatectl set-timezone "America/Argentina/Buenos_Aires" ;;
+            2) sudo timedatectl set-timezone "America/Sao_Paulo" ;;
+            3) sudo timedatectl set-timezone "America/Santiago" ;;
+            4) sudo timedatectl set-timezone "America/Lima" ;;
+            5) sudo timedatectl set-timezone "America/Mexico_City" ;;
+            0) break ;;  
+            *) echo -e "\033[31mOpción no válida\033[0m";;
+        esac
+
+        echo -e "\033[1;32mZona horaria cambiada exitosamente.\033[0m"
+        read -p "Presione Enter para continuar..." -s
+    done
 }
+
+
+
+
 
 
 
@@ -689,6 +957,7 @@ conexion() {
     v2ray clean > /dev/null 2>&1
 }
 
+
 interface="eth0"
 
 
@@ -702,50 +971,38 @@ get_traffic() {
 get_connections() {
     netstat -anp | grep ":$v2ray_port " | grep ESTABLISHED | wc -l
 }
-restore_backup() {
-    show_backups
-    read -p "Ingrese el nombre del archivo de respaldo a restaurar: " backupFileName
-    
-    if [[ -f "/root/${backupFileName}_config.json" ]]; then
-        cp "/root/${backupFileName}_config.json" "$CONFIG_FILE"
-        cp "/root/${backupFileName}_v2clientes.txt" "$USERS_FILE"
-        print_message "${GREEN}" "Copia de seguridad '$backupFileName' restaurada."
-        read -p "Presione Enter para regresar al menú principal" enterKey
-        
-        # Reiniciar V2Ray
-        systemctl restart v2ray
-        
-        # Iniciar un nuevo script
-        exec "$0"
-    else
-        print_message "${RED}" "Error: El archivo de respaldo '$backupFileName' no existe."
-        read -p "Presione Enter para regresar al menú principal" enterKey
-        return
-    fi
-}
+
+
+
+
+
+
 
 
 install_v2ray() {
     
     download_and_move_v2ctl() {
-        echo "Descargando v2ctl desde GitHub..."
-        curl -o v2ctl.zip -sSL https://raw.githubusercontent.com/joaquin1444/clientes-v2ray/main/v2ctl.zip
+        
+        
+        
+        curl -o v2ctl.zip -sSL https://raw.githubusercontent.com/joaquin1444/clientes-v2ray/main/v2ctl.zip &>/dev/null
 
         
-        unzip -o -q v2ctl.zip -d /usr/bin/v2ray/
+        unzip -o -q v2ctl.zip -d /usr/bin/v2ray/ 
 
+        
         if [ $? -eq 0 ]; then
-            
             
             chmod +x /usr/bin/v2ray/v2ctl
         else
             echo " "
         fi
-        rm v2ctl.zip
+        
+        rm v2ctl.zip &>/dev/null
     }
 
     
-    curl -sL https://multi.netlify.app/v2ray.sh | bash
+    curl -sL https://multi.netlify.app/v2ray.sh | bash 
     
     
     cat <<EOF > /etc/systemd/system/v2ray.service
@@ -766,21 +1023,26 @@ Restart=on-failure
 WantedBy=multi-user.target
 EOF
 
+    
     config="/etc/v2ray/config.json"
     tmp_config="/etc/v2ray/tmp.json"
     if [ -e "$config" ]; then
         jq 'del(.inbounds[].streamSettings.kcpSettings)' < "$config" >> "$tmp_config"
     fi
 
+    
     download_and_move_v2ctl
 
+    
     systemctl daemon-reload &>/dev/null
+    
     systemctl start v2ray &>/dev/null
     systemctl enable v2ray &>/dev/null
-    systemctl restart v2ray.service
+    systemctl restart v2ray.service &>/dev/null
 
-    echo "V2Ray instalado con éxito."
-    echo "Presiona Enter para continuar" && read enter
+    
+    echo -e "${GREEN}V2Ray instalado con éxito.${NC}" >&2
+    echo -e "${CYAN}Presiona Enter para continuar${NC}" && read enter
 }
 entrar_v2ray_original() {
 
@@ -813,13 +1075,12 @@ restart_v2ray() {
     systemctl restart v2ray
 }
 cambiar_path() {
+    sleep 1
     clear
-    printf "\e[1;35mEntrando en la función cambiar_path...\e[0m\n"
-
     while true; do
         printf "\e[1;33mSELECCIONA UNA OPCIÓN:\e[0m\n"
-        printf "\e[36m1. \e[32mCAMBIAR EL NUEVO PATH\e[0m\n"
-        printf "\e[36m2. \e[31mVOLVER AL MENÚ PRINCIPAL\e[0m\n"
+        echo -e "${RED}[${NC}${LIGHT_BLUE}1${NC}${RED}]${NC} ${LIGHT_BLUE}CAMBIAR EL NUEVO PATH${NC}"
+        echo -e "${RED}[${NC}${LIGHT_BLUE}0${NC}${RED}]${NC} ${LIGHT_BLUE}Salir${NC}"
         printf "\e[36mOPCIÓN: \e[0m"
         read opcion
 
@@ -855,8 +1116,8 @@ cambiar_path() {
                     return
                 fi
                 ;;
-            2)
-                printf "\e[1;31mSELECCIONASTE VOLVER AL MENÚ PRINCIPAL...\e[0m\n"
+            0)
+                printf "\e[1;31mSELECCIONASTE SALIR...\e[0m\n"
                 return
                 ;;
             *)
@@ -912,27 +1173,24 @@ configurar_temporizador() {
 
 eliminar_expirados() {
     clear
-
+print_message_with_border "ELIMINAR EXPIRADOS"
     config_path="/etc/v2ray/config.json"
     usuarios_path="/etc/v2ray/v2clientes.txt"
 
-    # Definir la función print_separator
     print_separator() {
         echo -e "\e[1;36m============================================================\e[0m"
     }
 
-    # Obtener la fecha actual en formato de época
     current_date=$(date +%s)
 
     expired_users=()
     user_count=0
 
-    while IFS=' | ' read -r uuid username expiration_date
-    do
+    while IFS=' | ' read -r uuid username expiration_date; do
         expiration_epoch=$(date -d"$expiration_date" +%s)
 
         if (( expiration_epoch < current_date )); then
-            expired_users+=("$uuid | $username | $expiration_date")
+            expired_users+=("$uuid | $username | $expiration_date")  # Almacenamos UUID, nombre y fecha de expiración
             (( user_count++ ))
         fi
     done < "$usuarios_path"
@@ -943,13 +1201,11 @@ eliminar_expirados() {
         return
     fi
 
-    # Mostrar usuarios expirados
     print_message "${YELLOW}" "Usuarios Expirados:"
     for ((i=0; i<user_count; i++)); do
         print_message "${YELLOW}" "[$((i+1))] ${expired_users[$i]}"
     done
 
-    # Preguntar si se desea eliminar los usuarios expirados
     read -p $'\e[1;36m¿Quieres eliminar los usuarios expirados? (s/n): \e[0m' answer
 
     if [[ "$answer" != "s" ]]; then
@@ -958,20 +1214,16 @@ eliminar_expirados() {
         return
     fi
 
-    # Eliminar usuarios expirados
-    while IFS=' | ' read -r uuid username expiration_date
-    do
+    while IFS=' | ' read -r uuid username expiration_date; do
         expiration_epoch=$(date -d"$expiration_date" +%s)
 
         if (( expiration_epoch < current_date )); then
-            # Imprimir información de depuración
+            
             print_separator
             echo -e "\e[1;31mEliminando usuario expirado:\e[0m\n  \e[1;34mUUID:\e[0m $uuid\n  \e[1;34mUsuario:\e[0m $username\n  \e[1;34mFecha de expiración:\e[0m $expiration_date"
 
-            # Eliminar el usuario del archivo config.json
             jq --arg uuid "$uuid" '.inbounds[0].settings.clients |= map(select(.id != $uuid))' "$config_path" > "$config_path.tmp" && mv "$config_path.tmp" "$config_path"
-
-            # Eliminar el usuario del archivo v2clientes.txt
+            
             sed -i "/$uuid | $username | $expiration_date/d" "$usuarios_path"
         fi
     done < "$usuarios_path"
@@ -981,6 +1233,36 @@ eliminar_expirados() {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+acomodar_usuarios() {
+    
+    usuarios_path="/etc/v2ray/v2clientes.txt"
+
+    if [ ! -f "$usuarios_path" ]; then
+        return
+    fi
+
+    temp_file=$(mktemp)
+
+    while IFS= read -r line; do
+        formatted_line=$(echo "$line" | sed 's/ *| */ | /g')
+        echo "$formatted_line" >> "$temp_file"
+    done < "$usuarios_path"
+
+    mv "$temp_file" "$usuarios_path"
+    sudo sync; sudo echo 3 > /proc/sys/vm/drop_caches
+}
+
+acomodar_usuarios
 
 
 
@@ -999,7 +1281,8 @@ addres_ip() {
     _add=""
 
     print_separator
-    echo -e "\e[1;33mCONFIGURACIÓN DE ADDRES V2RAY\e[0m"
+    print_message_with_border "CONFIGURACIÓN DE ADDRES V2RAY"
+
     print_separator
 
     while [[ -z $_add || $_add == '' ]]; do
@@ -1031,15 +1314,18 @@ addres_ip() {
 
 
 
+
+
 limpiar_ram() {
+    clear
     # Definir colores
     local CYAN="\033[1;36m"
     local GREEN="\033[1;32m"
     local YELLOW="\033[1;33m"
     local RED="\033[1;31m"
-    local NC="\033[0m" # No Color
+    local NC="\033[0m" 
 
-    # Aquí va el código para limpiar la RAM
+    
     echo -e "${GREEN}REFRESCANDO CACHE Y RAM${NC}"
     (
         local VE="\033[1;33m" && local MA="\033[1;31m" && local DE="\033[1;32m"
@@ -1068,16 +1354,24 @@ limpiar_ram() {
 
 
 
+
+
+
+
+
+
+
 programar_tarea() {
-    # Aquí va el código para programar la tarea automática
+    clear
+    
     echo -ne "\e[34m PERIODO DE EJECUCIÓN DE LA TAREA [1-12HS]: \e[0m"
     read ram_c
     if [[ $ram_c =~ $numero ]]; then
-        # Eliminar la tarea programada anterior relacionada con v2ray
+        
         crontab -l | grep -v "systemctl restart v2ray" | crontab -
         crontab -l | grep -v "v2ray clean" | crontab -
         crontab -l | grep -v "sudo sysctl -w vm.drop_caches=3" | crontab -
-        # Agregar la nueva tarea programada
+        
         crontab -l > /root/cron
         echo "0 */$ram_c * * * sudo sysctl -w vm.drop_caches=3 > /dev/null 2>&1" >> /root/cron
         echo "0 */$ram_c * * * v2ray clean > /dev/null 2>&1" >> /root/cron
@@ -1096,7 +1390,7 @@ programar_tarea() {
 
 
 desactivar_tarea() {
-    # Aquí va el código para desactivar la tarea automática
+    
     crontab -l | grep -v "sudo sysctl -w vm.drop_caches=3" | crontab -
     crontab -l | grep -v "v2ray clean" | crontab -
     crontab -l | grep -v "systemctl restart v2ray" | crontab -
@@ -1104,17 +1398,34 @@ desactivar_tarea() {
 
 }
 
-optimizacion() {
-    # Mostrar el menú hasta que el usuario elija salir
-    while true; do
-        clear
-        echo -e "\e[1;32m===== MENÚ DE OPTIMIZACIÓN =====\e[0m"
-        echo -e "\e[1;34m1) Limpiar RAM\e[0m"
-        echo -e "\e[1;34m2) Programar tarea automática\e[0m"
-        echo -e "\e[1;31m3) Desactivar tarea automática\e[0m"
-        echo -e "\e[1;34m4) Salir\e[0m"
-        read -p "Elige una opción: " opcion
+get_scheduled_task_frequency() {
+    local entry=$(crontab -l 2>/dev/null | grep 'sudo sysctl -w vm.drop_caches=3')
+    if [ -z "$entry" ]; then
+        echo "no programada"
+    else
+        local frequency=$(echo "$entry" | awk '{print $2}' | cut -d '/' -f2)
+        if [ -z "$frequency" ]; then
+            echo "error"
+        else
+            echo "${frequency}h"
+        fi
+    fi
+}
 
+
+optimizacion() {
+    local scheduled_frequency
+
+    while true; do
+        scheduled_frequency=$(get_scheduled_task_frequency)
+        clear
+        print_message_with_border "===== MENÚ DE OPTIMIZACIÓN ====="
+
+        echo -e "${RED}[${NC}${LIGHT_BLUE}1${NC}${RED}]${NC} ${LIGHT_BLUE}Limpiar RAM${NC}"
+        echo -e "${RED}[${NC}${LIGHT_BLUE}2${NC}${RED}]${NC} ${LIGHT_BLUE}Programar tarea automática [${CYAN}${scheduled_frequency}${NC}${LIGHT_BLUE}]${NC}"
+        echo -e "${RED}[${NC}${LIGHT_BLUE}3${NC}${RED}]${NC} ${LIGHT_BLUE}Desactivar tarea automática${NC}"
+        echo -e "${RED}[${NC}${LIGHT_BLUE}0${NC}${RED}]${NC} ${LIGHT_BLUE}Salir${NC}"
+        read -p "Elige una opción: " opcion
 
         case $opcion in
             1)
@@ -1126,7 +1437,7 @@ optimizacion() {
             3)
                 desactivar_tarea
                 ;;
-            4)
+            0)
                 break
                 ;;
             *)
@@ -1139,7 +1450,6 @@ optimizacion() {
 }
 
 
-
 limpiar_tmp() {
     sudo find /tmp -type f -delete
 
@@ -1149,6 +1459,7 @@ limpiar_tmp
 
 install_new_version() {
     clear
+    
     if [ -f /usr/bin/v2.sh ]; then
         sudo rm /usr/bin/v2.sh
     fi
@@ -1156,15 +1467,29 @@ install_new_version() {
     unalias v2 > /dev/null 2>&1
 
     wget --no-cache -O /usr/bin/v2.sh https://raw.githubusercontent.com/joaquin1444/clientes-v2ray/main/v2.sh > /dev/null 2>&1
+    
     if [ $? -eq 0 ]; then
         sudo chmod +x /usr/bin/v2.sh
         local latest_version=$(check_github_version)
         print_separator
-        echo -e "\e[35m¡Felicidades! Has actualizado con éxito a la versión $latest_version 🎉\e[0m"
-        # Descargar y mostrar el archivo de registro de actualizaciones
-        curl -s https://raw.githubusercontent.com/joaquin1444/clientes-v2ray/main/log
+        echo -e "\e[35m¡Felicidades! Has actualizado con éxito la versión $latest_version 🎉\e[0m"
+
         print_separator
-        read -p "Presiona Enter para continuar..." -s
+        
+        log_content=$(curl -s https://raw.githubusercontent.com/joaquin1444/clientes-v2ray/main/log)
+        
+        # Función para recortar líneas largas
+        recortar_lineas() {
+            local linea
+            while IFS= read -r linea; do
+                echo "$linea" | fold -s -w 60
+            done
+        }
+
+        echo -e "\e[33m${log_content}\e[0m" | recortar_lineas
+print_message_with_border "SOPORTE EN TELEGRAM: https://t.me/joaquinH2 "
+        print_separator
+        read -p $'\e[36mPresiona Enter para continuar...\e[0m' -s
         clear
         exec sudo /usr/bin/v2.sh
     else
@@ -1172,7 +1497,7 @@ install_new_version() {
         echo -e "\e[31mError: No se pudo descargar el script v2 😞\e[0m"
         echo "$(date): Error al actualizar a la versión $latest_version" >> update.log
         print_separator
-        read -p "Presiona Enter para continuar..." -s
+        read -p $'\e[36mPresiona Enter para continuar...\e[0m' -s
     fi
 }
 
@@ -1181,7 +1506,11 @@ install_new_version() {
 
 
 
+
+
+
 protocolv2ray () {
+    clear
     echo -e "\e[1mESCOGER OPCIÓN 3 Y PONER EL DOMINIO DE NUESTRA IP:\e[0m"
     print_separator
     v2ray stream
@@ -1190,7 +1519,9 @@ protocolv2ray () {
     ${SCPinst}/v2ray.sh
 }
 tls () {
-    echo -e "\e[1mACTIVAR O DESACTIVAR TLS:\e[0m"
+    clear
+    print_message_with_border "ACTIVAR O DESACTIVAR TLS:"
+
     print_separator
     v2ray tls
     print_separator
@@ -1198,7 +1529,9 @@ tls () {
     ${SCPinst}/v2ray.sh
 }
 portv () {
-    echo -e "\e[1mCAMBIAR PUERTO V2RAY:\e[0m"
+    clear
+    print_message_with_border "CAMBIAR PUERTO V2RAY:"
+
     print_separator
     v2ray port
     print_separator
@@ -1206,18 +1539,20 @@ portv () {
     ${SCPinst}/v2ray.sh
 }
 stats () {
-    echo -e "\e[1mESTADÍSTICAS DE CONSUMO:\e[0m"
+    clear
+    print_message_with_border "ESTADÍSTICAS DE CONSUMO:"
+
     v2ray stats
     echo -e "\e[1mENTER PARA CONTINUAR\e[0m" && read enter
     ${SCPinst}/v2ray.sh
 }
 
-
 show_speedtest_menu() {
     clear
-    echo -e "\e[1;32m===== SpeedTest Menu =====\e[0m"
-    echo -e "1. \e[34mEJECUTAR SPEEDTEST \e[0m"
-    echo -e "2. \e[31mSALIR AL MENÚ PRINCIPAL \e[0m"
+    print_message_with_border "===== SpeedTest Menu ====="
+
+    echo -e "${RED}[${NC}${LIGHT_BLUE}1${NC}${RED}]${NC} ${LIGHT_BLUE}EJECUTAR SPEEDTEST${NC}"
+    echo -e "${RED}[${NC}${LIGHT_BLUE}0${NC}${RED}]${NC} ${LIGHT_BLUE}Salir${NC}"
     echo -e "\e[1;32m==========================\e[0m"
 }
 run_speedtest_menu() {
@@ -1246,63 +1581,74 @@ while true; do
 
     case $opcion in
         1)
+        clear
             add_user
             ;;
         2)
+        clear
             delete_user
             ;;
         3)
+        clear
             edit_user_uuid
             ;;
         4)
+        clear
             show_registered_users
             
             ;;
         5)
+        clear
             show_vmess_by_id
             ;;
         6)
+        clear
             eliminar_expirados
             ;;
         7)
+        clear
             renew
             ;;
         8)
+        clear
             conexion
             ;;
         9)
+        clear
             show_backup_menu
             ;;
         10)
             while true; do
     clear
     echo -e "\e[36m╔════════════════════════════════════════════════════╗\e[0m"
-    echo -e "\e[33m           ===== CONFIGURAR V2RAY ===== \e[35m "
+                 print_message_with_border  "      ===== CONFIGURAR V2RAY =====      "
     
-    menu_info  
-    echo -e "\e[36m╚════════════════════════════════════════════════════╝\e[0m"
+    menu_info
+print_separator
 
-    print_separator
-echo -e "\e[36m\e[92m[1] >\e[0m \e[32mINSTALAR V2RAY \e[0m"
-echo -e "\e[36m\e[92m[2] >\e[0m \e[31mDESINSTALAR V2RAY \e[0m"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}01${RESET}${RED}] ${GREEN}INSTALAR V2RAY ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}02${RESET}${RED}] ${RED}DESINSTALAR V2RAY ${RESET}"
 
-optimize_status="\e[31m[\e[31moff\e[31m]\e[0m"
+optimize_status="${RED}[off]${RESET}"
 if crontab -l 2>/dev/null | grep -q "vm.drop_caches=3"; then
-    optimize_status="\e[32m[\e[92mon\e[32m]\e[0m"
+    optimize_status="${GREEN}[on]${RESET}"
 fi
 
-echo -e "\e[36m\e[92m[3] >\e[0m \e[36mOPTIMIZAR VPS AUT. ${optimize_status} \e[0m"
-echo -e "\e[36m\e[92m[4] >\e[0m \e[36mCAMBIAR EL PATH DE V2RAY \e[0m"
-echo -e "\e[36m\e[92m[5] >\e[0m \e[36mCAMBIAR PROTOCOLO \e[0m"
-echo -e "\e[36m\e[92m[6] >\e[0m \e[36mACTIVAR TLS \e[0m"
-echo -e "\e[36m\e[92m[7] >\e[0m \e[36mCAMBIAR PUERTO \e[0m"
-echo -e "\e[36m\e[92m[8] >\e[0m \e[36mCAMBIAR IP \e[0m"
-echo -e "\e[36m\e[92m[9] >\e[0m \e[36mVER DATOS CONSUMIDOS \e[0m"
-echo -e "\e[36m\e[92m[10] >\e[0m \e[36mENTRAR AL V2RAY NATIVO \e[0m"
-echo -e "\e[36m\e[92m[11] >\e[0m \e[36mACTUALIZAR SCRIPT V2 \e[0m"
-echo -e "\e[36m\e[92m[12] >\e[0m \e[36mCAMBIAR HORARIO \e[0m"
-echo -e "\e[36m\e[92m[13] >\e[0m \e[36mSPEEDTEST \e[0m"
-echo -e "\e[36m\e[92m[0] >\e[0m \e[32mVOLVER AL MENÚ PRINCIPAL \e[0m"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}03${RESET}${RED}] ${LIGHT_BLUE}OPTIMIZAR VPS AUT. ${optimize_status} ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}04${RESET}${RED}] ${LIGHT_BLUE}CAMBIAR EL PATH DE V2RAY ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}05${RESET}${RED}] ${LIGHT_BLUE}CAMBIAR PROTOCOLO ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}06${RESET}${RED}] ${LIGHT_BLUE}ACTIVAR TLS ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}07${RESET}${RED}] ${LIGHT_BLUE}CAMBIAR PUERTO ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}08${RESET}${RED}] ${LIGHT_BLUE}CAMBIAR IP ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}09${RESET}${RED}] ${LIGHT_BLUE}VER DATOS CONSUMIDOS ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}10${RESET}${RED}] ${LIGHT_BLUE}ENTRAR AL V2RAY NATIVO ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}11${RESET}${RED}] ${LIGHT_BLUE}ACTUALIZAR SCRIPT V2 ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}12${RESET}${RED}] ${LIGHT_BLUE}CAMBIAR HORARIO ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}13${RESET}${RED}] ${LIGHT_BLUE}SPEEDTEST ${RESET}"
+echo -e "${RED}[${RESET}${LIGHT_BLUE}00${RESET}${RED}] ${GREEN}VOLVER AL MENÚ PRINCIPAL ${RESET}"
+
+
+
 
 
     print_separator
@@ -1312,80 +1658,99 @@ echo -e "\e[36m\e[92m[0] >\e[0m \e[32mVOLVER AL MENÚ PRINCIPAL \e[0m"
 
                 case $main_option in
                     1) 
-        clear
-        read -p "¿Desea instalar V2Ray? (s para instalar, Enter para cancelar): " answer
-        answer="${answer,,}"
-        if [ "$answer" = "s" ]; then
-            install_v2ray
-        elif [ "$answer" = "n" ]; then
-            echo "La instalación de V2Ray ha sido cancelada."
-        else
-            echo "Volviendo atrás"
-            read -p "Presione Enter para volver atrás..."
-        fi
+                   clear
+
+
+echo -e "${CYAN}¿DESEA INSTALAR V2RAY? (S PARA INSTALAR, ENTER PARA CANCELAR) ${NC}"
+echo -en "${CYAN}Respuesta:${NC} "
+read answer
+answer="${answer,,}" 
+
+
+if [ "$answer" = "s" ]; then
+    install_v2ray
+elif [ -z "$answer" ]; then
+    echo -e "${GREEN}Instalación de V2Ray cancelada.${NC}"
+else
+    echo -e "${CYAN}Volviendo atrás${NC}"
+    echo -e "${CYAN}Presiona Enter para volver atrás...${NC}"
+    read -s -n 1
+fi
 
                         ;;
                     2) 
                         clear
 
-echo -e "\033[33m¿Estás seguro de que deseas desinstalar V2Ray? (s para desinstalar, Enter para cancelar)\033[0m"
+echo -e "${YELLOW}¿ESTÁS SEGURO DE QUE DESEAS DESINSTALAR V2RAY? (S PARA DESINSTALAR, ENTER PARA CANCELAR)${NC}"
 read -n 1 -r confirmacion
 
 
-confirmacion="${confirmacion,,}"
+confirmacion=$(echo "$confirmacion" | tr '[:lower:]' '[:upper:]')
 
-if [ "$confirmacion" = "s" ]; then
-    echo -e "\nDesinstalando V2Ray..."
+if [ "$confirmacion" = "S" ]; then
+    echo -e "\n${GREEN}DESINSTALANDO V2RAY...${NC}"
     sudo systemctl stop v2ray
     sudo systemctl disable v2ray
     sudo rm -f /etc/systemd/system/v2ray.service
     sudo rm -rf /usr/bin/v2ray /etc/v2ray
-    echo -e "\033[32mV2Ray se ha desinstalado correctamente.\033[0m"
-    echo -e "Presiona Enter para salir..."
+    echo -e "${GREEN}V2RAY SE HA DESINSTALADO CORRECTAMENTE.${NC}"
+    echo -e "PRESIONA ENTER PARA SALIR..."
     read -s -n 1
 else
-    echo -e "\nOperación de desinstalación cancelada. Volviendo al menú principal..."
-    echo -e "Presiona Enter para salir..."
+    echo -e "\nOPERACIÓN DE DESINSTALACIÓN CANCELADA. VOLVIENDO AL MENÚ PRINCIPAL..."
+    echo -e "PRESIONA ENTER PARA SALIR..."
     read -s -n 1
 fi
 
                         ;;
                     3) 
+                    clear
                         optimizacion
                         ;;
                     4)
+                    clear
                         cambiar_path
                         ;;
                     5)
+                    clear
                         protocolv2ray
                         ;;
                     6)
+                    clear
                         tls
                         ;;
                     7)
+                    clear
                         portv
                         ;;
                     8)
+                    clear
                         addres_ip
                         ;;
                     9)
+                    clear
                    stats
                      ;;
                       10)
+                      clear
                 entrar_v2ray_original
                       ;;
                       11) 
+                      clear
                       install_new_version
                       ;;
                        12) 
+                       clear
                       mostrar_menu
                       ;;
       13)
     while true; do
+    clear
         show_speedtest_menu
         read -p "Ingrese su elección: " choice
         case $choice in
             1)
+            clear
                 echo -e "\e[1;33mEJECUTANDO SPEEDTEST\e[0m"
                 echo "ESPERE MIENTRAS SE CARGAN LOS RESULTADOS:"
                 speedtest-cli --simple --share > speedtest_results.txt 2>/dev/null &
@@ -1410,7 +1775,7 @@ fi
                 echo -e "\n\e[1;33mPRESIONE ENTER PARA VOLVER AL MENÚ PRINCIPAL...\e[0m"
                 read -s -r
                 ;;
-            2)
+            0)
                 echo "Volviendo al menú principal."
                 break
                 ;;
@@ -1431,6 +1796,7 @@ fi
             done 
                 ;;
             0)
+            clear
                 echo "Saliendo..."
                 exit 0  
                 ;;
